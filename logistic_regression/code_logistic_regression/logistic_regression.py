@@ -1,4 +1,4 @@
-########## >>>>>> Put your full name and 6-digit EWU ID here. 
+########## >>>>>> Eric Vo - tvo12. 
 
 # Implementation of the logistic regression with L2 regularization and supports stachastic gradient descent
 
@@ -37,10 +37,86 @@ class LogisticRegression:
         '''
 
         # remove the pass statement and fill in the code. 
-
-        pass
-
-    
+        
+        self.degree = degree
+        X = MyUtils.z_transform(X, degree = self.degree)
+        X = np.insert(X, 0, 1, axis = 1)
+        
+        if SGD:
+            self._SGD(X, y, lam, eta, iterations, mini_batch_size)
+        else:
+            self._BGD(X, y, lam, eta, iterations)
+        
+        
+        
+    def _BGD(self, X, y, lam, eta, iterations):
+        n, d = np.shape(X)
+        w = np.zeros((d, 1))
+        XT = X.T
+        
+        r = 1 - (2 * lam * (eta / n))
+        
+        for i in range(iterations):
+            s = y * (X @ w)
+            v = LogisticRegression._v_sigmoid(-s)
+            w = r * w + ((eta / n) * (XT @ (y * v)))
+            
+        self.w = w
+        
+    def _SGD(self, X, y, lam, eta, iterations, mini_batch_size):
+        n, d = np.shape(X)
+        m = mini_batch_size
+        w = np.zeros((d,1))
+        
+        if m > n or m < 1:
+            m = n
+        
+        
+        
+        
+        roll = False
+        
+        if roll:
+            rol = np.append(X, y, axis = 1)
+            np.random.shuffle(rol)
+            X = rol[:, :d]
+            y = rol[:, d:]
+        
+        
+        
+        
+        a = 0
+        b = a + m
+        c = a
+        
+        r = 1 - (2 * lam * (eta / m))
+        
+        for i in range(iterations):
+            ym = y[c:b, :]
+            xm = X[c:b, :]
+            
+            s = ym * (xm @ w)
+            
+            v = LogisticRegression._v_sigmoid(-s)
+            
+            w = ((eta / m) * ((ym * v).T @ xm)).T + (r * w)
+            
+            if n != m: 
+                a += m
+                b = a + m
+                c = a 
+                
+                if b >= n and a < n:
+                    c = a
+                    a = -m
+                    b = n
+                if b > n:
+                    a = 0
+                    b = a + m
+        self.w = w 
+        
+        
+        
     def predict(self, X):
         ''' parameters:
                 X: n x d matrix; n samples; each has d features, excluding the bias feature. 
@@ -48,8 +124,14 @@ class LogisticRegression:
                 n x 1 matrix: each row is the probability of each sample being positive. 
         '''
     
+        
         # remove the pass statement and fill in the code. 
-        pass
+        
+        X = MyUtils.z_transform(X, degree = self.degree)
+        X = np.insert(X, 0, 1, axis = 1)
+    
+        return LogisticRegression._v_sigmoid(X @ self.w)
+    
     
     
     def error(self, X, y):
@@ -62,9 +144,19 @@ class LogisticRegression:
         '''
 
         # remove the pass statement and fill in the code.         
-        pass
+        count = 0 
+        error = self.predict(X)
+        
+        for a, b in zip(error, y): 
+            if a > 0.5:
+                c = 1
+            else:
+                c = -1
+            
+            if c != b:
+                count += 1
     
-    
+        return count
 
     def _v_sigmoid(s):
         '''
@@ -77,9 +169,8 @@ class LogisticRegression:
         # Hint: use the np.vectorize API
 
         # remove the pass statement and fill in the code.         
-        pass
-    
-    
+        v = np.vectorize(LogisticRegression._sigmoid)
+        return v(s)
         
     def _sigmoid(s):
         ''' s: a real number
@@ -87,5 +178,5 @@ class LogisticRegression:
         '''
 
         # remove the pass statement and fill in the code.         
-        pass
-    
+        e = np.exp(-s)
+        return (1 / (1 + e))
